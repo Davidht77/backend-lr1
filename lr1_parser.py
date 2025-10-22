@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Parser LR(1) - Punto de Entrada Principal
 Este archivo utiliza la estructura modular del paquete lr1_parser/

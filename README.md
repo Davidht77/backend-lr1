@@ -6,17 +6,19 @@ Implementación completa de un Parser LR(1) con visualización gráfica del aut�
 
 ### 🔧 Archivos NECESARIOS (No Borrar)
 
-#### 1. `lr1_parser.py` ⭐ CORE
-El archivo principal con toda la lógica del parser:
-- Clase `Grammar`: Manejo de gramáticas libres de contexto
-- Clase `LR1Item`: Representación de items LR(1)
-- Clase `LR1Parser`: Parser completo con:
-  - Cálculo de FIRST y FOLLOW
-  - Construcción del autómata LR(1)
-  - Generación de tabla de parsing
-  - Visualización gráfica del autómata
+#### 1. `lr1/` ⭐ CORE
+Paquete modular con toda la lógica del parser:
+- `grammar.py`: manejo de gramáticas y utilidades FIRST/FOLLOW
+- `items.py`: representación inmutable de items LR(1)
+- `parser.py`: construcción del autómata y tabla LR(1)
+- `visualization.py`: helpers opcionales con Graphviz
+- `examples.py`: gramáticas de ejemplo reutilizables
+- `cli.py`: interfaz de línea de comandos para la demo
 
-#### 2. `demo.py` 🎯 INTERFAZ
+#### 2. `lr1_parser.py` 🔄 COMPATIBILIDAD
+Wrapper ligero que reexporta las clases principales y permite ejecutar la demo antigua con `python lr1_parser.py`.
+
+#### 3. `demo.py` 🎯 INTERFAZ
 Demo interactiva con 6 gramáticas predefinidas:
 - Expresiones Aritméticas
 - Lista de elementos  
@@ -25,12 +27,12 @@ Demo interactiva con 6 gramáticas predefinidas:
 - Expresiones booleanas
 - Asignaciones
 
-#### 3. `requirements.txt` 📦 DEPENDENCIAS
+#### 4. `requirements.txt` 📦 DEPENDENCIAS
 ```
 graphviz
 ```
 
-#### 4. `README.md` 📖 DOCUMENTACIÓN
+#### 5. `README.md` 📖 DOCUMENTACIÓN
 Este archivo con instrucciones de uso.
 
 ### 🧪 Archivos Opcionales
@@ -175,27 +177,20 @@ lr1_parser.py (676 líneas)
 ============================================================
 GRAMÁTICA
 ============================================================
-E' -> E
-E -> E + T | T
-T -> id
+```
+lr1/
+├── __init__.py               # Punto de entrada del paquete
+├── cli.py                    # Demo en línea de comandos
+├── examples.py               # Gramáticas de ejemplo
+├── grammar.py                # Clase Grammar + FIRST/FOLLOW
+├── items.py                  # Definición de LR1Item (dataclass)
+├── parser.py                 # Motor LR(1): closure/goto/tabla
+└── visualization.py          # Render opcional con Graphviz
 
-============================================================
-CONJUNTOS FIRST
-============================================================
-FIRST(E) = { id }
-FIRST(T) = { id }
-
-============================================================
-TABLA DE PARSING LR(1)
-============================================================
-Estado   | ACTION               | GOTO
-         | $    +    id         | E    T
----------+---------------------+-------
-0        |           s1         | 3    2
-1        | r2   r2              |
-2        | r1   r1              |
-3        | acc  s4              |
-4        |           s1         |      5
+lr1_parser.py                 # Wrapper de compatibilidad
+demo.py                       # Demo interactiva existente
+test_parser.py                # Suite de pruebas automatizadas
+```
 5        | r0   r0              |
 
 ============================================================
