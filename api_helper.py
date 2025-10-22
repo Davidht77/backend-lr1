@@ -8,7 +8,6 @@ from lr1_parser import Grammar, LR1Parser
 from demo import parsear_gramatica_desde_texto
 import json
 
-
 def procesar_gramatica_api(texto_gramatica):
     """
     Procesa una gramática desde texto y retorna resultados en formato JSON-friendly.
