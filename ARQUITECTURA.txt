@@ -1,0 +1,223 @@
+"""
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                  ARQUITECTURA MODULAR DEL PARSER LR(1)                        ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          PUNTOS DE ENTRADA                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐            ┌──────────────────┐
+    │  lr1_parser.py   │            │     demo.py      │
+    │   (65 líneas)    │            │  (455 líneas)    │
+    │                  │            │                  │
+    │  • main()        │            │  • demo paso a   │
+    │  • CLI básico    │            │    paso          │
+    │                  │            │  • 6 gramáticas  │
+    └────────┬─────────┘            └────────┬─────────┘
+             │                               │
+             │        ┌──────────────────────┘
+             │        │
+             └────────┼────────┐
+                      │        │
+                      ▼        ▼
+       ╔═══════════════════════════════════════════════════════════════════╗
+       ║              PAQUETE lr1_parser/ (7 módulos)                      ║
+       ╚═══════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            __init__.py (25 líneas)                           │
+│  • Exporta todas las clases y funciones públicas                            │
+│  • Define __all__ para importaciones con *                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                     │
+                ┌────────────────────┼────────────────────┐
+                │                    │                    │
+                ▼                    ▼                    ▼
+
+┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
+│   grammar.py        │  │      item.py        │  │    examples.py      │
+│   (180 líneas)      │  │    (50 líneas)      │  │    (60 líneas)      │
+├─────────────────────┤  ├─────────────────────┤  ├─────────────────────┤
+│ class Grammar       │  │ class LR1Item       │  │ create_example_1()  │
+│                     │  │                     │  │ create_example_2()  │
+│ • productions[]     │  │ • non_terminal      │  │ create_example_3()  │
+│ • terminals         │  │ • production        │  │                     │
+│ • non_terminals     │  │ • dot_position      │  │ Gramáticas:         │
+│ • start_symbol      │  │ • lookahead         │  │ 1. Aritméticas      │
+│                     │  │                     │  │ 2. S → A a | ...    │
+│ Métodos:            │  │ Métodos:            │  │ 3. S → S + A | A    │
+│ • add_production()  │  │ • next_symbol()     │  └─────────────────────┘
+│ • compute_first()   │  │ • advance()         │
+│ • compute_follow()  │  │ • __eq__()          │
+│ • print_grammar()   │  │ • __hash__()        │
+│ • print_sets()      │  │ • __repr__()        │
+└──────────┬──────────┘  └──────────┬──────────┘
+           │                        │
+           │                        │
+           │      ┌─────────────────┘
+           │      │
+           ▼      ▼
+    ┌──────────────────────────────────────┐
+    │         parser.py (470 líneas)       │
+    ├──────────────────────────────────────┤
+    │ class LR1Parser                      │
+    │                                      │
+    │ Atributos:                           │
+    │ • grammar                            │
+    │ • first{}                            │
+    │ • follow{}                           │
+    │ • states[]                           │
+    │ • transitions{}                      │
+    │ • parsing_table{}                    │
+    │                                      │
+    │ Métodos principales:                 │
+    │ • build()                            │
+    │ • closure(items)                     │
+    │ • goto(items, symbol)                │
+    │ • build_automaton()                  │
+    │ • build_parsing_table()              │
+    │                                      │
+    │ Impresión:                           │
+    │ • print_automaton()                  │
+    │ • print_parsing_table()              │
+    │ • print_closure_table()              │
+    │                                      │
+    │ Visualización:                       │
+    │ • visualize_automaton()              │
+    │   (completo con clausura)            │
+    │ • visualize_simplified_automaton()   │
+    │   (solo kernel items)                │
+    └──────────────────────────────────────┘
+
+    ┌──────────────────────────────────────┐
+    │    visualizer.py (150 líneas)        │
+    ├──────────────────────────────────────┤
+    │ class RegularGrammarAFNVisualizer    │
+    │                                      │
+    │ Atributos:                           │
+    │ • grammar                            │
+    │ • states                             │
+    │ • transitions{}                      │
+    │ • final_states                       │
+    │                                      │
+    │ Métodos:                             │
+    │ • _analyze_grammar()                 │
+    │ • visualize_afn()                    │
+    │   (autómata no determinista)         │
+    │ • visualize_afd()                    │
+    │   (autómata determinista)            │
+    │ • print_automaton_info()             │
+    │                                      │
+    │ Uso: Gramáticas regulares            │
+    │ Genera: PNG con graphviz             │
+    └──────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          DEPENDENCIAS EXTERNAS                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+    │   graphviz   │     │  collections │     │    typing    │
+    └──────────────┘     └──────────────┘     └──────────────┘
+           │                    │                     │
+           │                    │                     │
+           └────────────────────┴─────────────────────┘
+                                │
+                    ┌───────────┴────────────┐
+                    │                        │
+           Usado por parser.py      Usado por visualizer.py
+           • Digraph()              • Digraph()
+           • render()               • render()
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                         FLUJO DE EJECUCIÓN                                    ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+    1. Usuario ejecuta: python lr1_parser.py
+                        │
+                        ▼
+    2. Se importa:     from lr1_parser import *
+                        │
+                        ▼
+    3. __init__.py     Carga todos los módulos
+                        │
+                        ▼
+    4. main()          Solicita gramática
+                        │
+                        ▼
+    5. Grammar()       Se crea gramática
+                        │
+                        ▼
+    6. LR1Parser()     Se crea parser
+                        │
+                        ▼
+    7. parser.build()  • compute_first()
+                       • compute_follow()
+                       • build_automaton()
+                       • build_parsing_table()
+                        │
+                        ▼
+    8. Impresiones     • print_automaton()
+                       • print_parsing_table()
+                       • print_closure_table()
+                        │
+                        ▼
+    9. Visualización   • visualize_automaton()
+                       • visualize_simplified_automaton()
+                        │
+                        ▼
+   10. Archivos PNG    ✓ automaton_lr1.png
+                       ✓ automaton_lr1_simplified.png
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                     VENTAJAS DE LA ARQUITECTURA                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  ✓  Separación de responsabilidades                                 │
+    │     Cada módulo tiene una función específica y bien definida        │
+    │                                                                     │
+    │  ✓  Código legible                                                  │
+    │     Archivos pequeños (~50-470 líneas) fáciles de entender         │
+    │                                                                     │
+    │  ✓  Mantenible                                                      │
+    │     Cambios localizados sin afectar otros módulos                  │
+    │                                                                     │
+    │  ✓  Testeable                                                       │
+    │     Cada módulo puede testearse independientemente                 │
+    │                                                                     │
+    │  ✓  Reutilizable                                                    │
+    │     Importación selectiva: from lr1_parser import Grammar          │
+    │                                                                     │
+    │  ✓  Extensible                                                      │
+    │     Agregar nuevos módulos sin modificar existentes                │
+    │                                                                     │
+    │  ✓  Documentado                                                     │
+    │     Docstrings en cada clase y método                              │
+    └─────────────────────────────────────────────────────────────────────┘
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                  MÉTRICAS DE CÓDIGO (Líneas por módulo)                      ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+    __init__.py       ████ 25
+    item.py           ██████████ 50
+    examples.py       ████████████ 60
+    lr1_parser.py     █████████████ 65
+    grammar.py        ████████████████████████████████████ 180
+    visualizer.py     ██████████████████████████████████████████████████ 150
+    parser.py         ██████████████████████████████████████████████████████████████████████████████████████ 470
+                      └────────────────────────────────────────────────────────────────────────────┘
+                      0                      200                     400                     600
+
+    Total:  1,000 líneas de código modular y organizado
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                  FIN                                          ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+"""

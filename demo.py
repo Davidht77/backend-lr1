@@ -7,6 +7,241 @@ Muestra todas las capacidades del analizador sintactico LR(1)
 from lr1_parser import Grammar, LR1Parser
 
 
+def parsear_gramatica_desde_texto(texto):
+    """
+    Parsea una gramática desde texto.
+    
+    Args:
+        texto: String con las producciones, una por línea
+               Formato: "S -> C C" o "S : C C"
+    
+    Returns:
+        Grammar object o None si hay error
+    
+    Ejemplo:
+        texto = '''
+        S -> C C
+        C -> c C
+        C -> d
+        '''
+        grammar = parsear_gramatica_desde_texto(texto)
+    """
+    grammar = Grammar()
+    lineas = texto.strip().split('\n')
+    
+    for i, linea in enumerate(lineas, 1):
+        linea = linea.strip()
+        
+        # Saltar líneas vacías o comentarios
+        if not linea or linea.startswith('#'):
+            continue
+        
+        # Detectar separador
+        separador = None
+        if '->' in linea:
+            separador = '->'
+        elif ':' in linea:
+            separador = ':'
+        else:
+            print(f"[ERROR] Línea {i}: Formato inválido: {linea}")
+            print(f"        Use: 'NoTerminal -> producción' o 'NoTerminal : producción'")
+            return None
+        
+        # Parsear
+        partes = linea.split(separador, 1)
+        if len(partes) != 2:
+            print(f"[ERROR] Línea {i}: No se pudo parsear: {linea}")
+            return None
+        
+        no_terminal = partes[0].strip()
+        produccion_str = partes[1].strip()
+        
+        if not no_terminal:
+            print(f"[ERROR] Línea {i}: No terminal vacío")
+            return None
+        
+        # Procesar producción
+        if not produccion_str or produccion_str.lower() == 'epsilon' or produccion_str == 'ε':
+            produccion = []
+        else:
+            produccion = produccion_str.split()
+        
+        grammar.add_production(no_terminal, produccion)
+    
+    if len(grammar.productions) == 0:
+        print("[ERROR] No se encontraron producciones válidas")
+        return None
+    
+    return grammar
+
+
+def crear_gramatica_personalizada():
+    """Permite al usuario crear su propia gramática interactivamente"""
+    print_header("CREAR GRAMÁTICA PERSONALIZADA")
+    
+    print("\nSelecciona el modo de entrada:")
+    print("  1. Línea por línea (ingresar una producción a la vez)")
+    print("  2. Pegar todo de una vez (copiar/pegar toda la gramática)")
+    
+    modo = input("\nElige una opción (1-2) [1]: ").strip() or "1"
+    
+    if modo == "2":
+        return crear_gramatica_bloque()
+    else:
+        return crear_gramatica_linea_por_linea()
+
+
+def crear_gramatica_bloque():
+    """Permite pegar toda la gramática de una vez"""
+    print_header("PEGAR GRAMÁTICA COMPLETA")
+    
+    print("\nFormatos aceptados:")
+    print("  • E -> E + T       (formato tradicional con ->)")
+    print("  • E : E + T        (formato alternativo con :)")
+    print("  • S -> epsilon     (producción vacía)")
+    print("\nEjemplo:")
+    print("  S -> C C")
+    print("  C -> c C")
+    print("  C -> d")
+    print()
+    print("=" * 80)
+    print("Pega tu gramática completa (presiona Enter dos veces para terminar):")
+    print("=" * 80)
+    
+    lineas = []
+    lineas_vacias = 0
+    
+    while True:
+        entrada = input()
+        
+        if not entrada.strip():
+            lineas_vacias += 1
+            if lineas_vacias >= 2:  # Dos Enters consecutivos = terminar
+                break
+        else:
+            lineas_vacias = 0
+            lineas.append(entrada)
+    
+    if not lineas:
+        print("\n[ERROR] No se ingresó ninguna gramática.")
+        return None
+    
+    # Unir todas las líneas
+    texto_completo = '\n'.join(lineas)
+    
+    print("\n" + "=" * 80)
+    print("Gramática ingresada:")
+    print("=" * 80)
+    print(texto_completo)
+    print("=" * 80)
+    
+    confirmar = input("\n¿Proceder con el análisis? (s/n) [s]: ").strip().lower() or 's'
+    if confirmar != 's':
+        print("[INFO] Gramática descartada.")
+        return None
+    
+    # Parsear usando la función existente
+    grammar = parsear_gramatica_desde_texto(texto_completo)
+    
+    if grammar:
+        print(f"\n[OK] Se parsearon {len(grammar.productions)} producciones.")
+        print("\nGramática creada:")
+        print("-" * 80)
+        for i, (nt, prod) in enumerate(grammar.productions):
+            prod_str = ' '.join(prod) if prod else 'ε'
+            print(f"  {i + 1}. {nt} → {prod_str}")
+    
+    return grammar
+
+
+def crear_gramatica_linea_por_linea():
+    """Permite ingresar la gramática línea por línea (modo original)"""
+    print_header("INGRESAR GRAMÁTICA LÍNEA POR LÍNEA")
+    
+    print("\n¿Cómo funciona?")
+    print("  1. Ingresa cada producción en formato estándar")
+    print("  2. Repite para agregar más producciones")
+    print("  3. Escribe 'fin' cuando termines")
+    print("\nFormatos aceptados:")
+    print("  • E -> E + T       (formato tradicional con ->)")
+    print("  • E : E + T        (formato alternativo con :)")
+    print("  • S -> epsilon     (producción vacía)")
+    print("  • S ->             (producción vacía, sin 'epsilon')")
+    print("\nEjemplos:")
+    print("  S -> C C")
+    print("  C -> c C")
+    print("  C -> d")
+    print()
+    
+    grammar = Grammar()
+    produccion_count = 0
+    
+    print("=" * 80)
+    print("Ingresa las producciones (escribe 'fin' para terminar):")
+    print("=" * 80)
+    
+    while True:
+        entrada = input(f"\nProducción {produccion_count + 1}: ").strip()
+        
+        if entrada.lower() == 'fin':
+            if produccion_count == 0:
+                print("\n[ERROR] Debes ingresar al menos una producción.")
+                continue
+            break
+        
+        if not entrada:
+            print("[ERROR] Entrada vacía. Intenta de nuevo.")
+            continue
+        
+        # Parsear la entrada - soportar -> o :
+        separador = None
+        if '->' in entrada:
+            separador = '->'
+        elif ':' in entrada:
+            separador = ':'
+        else:
+            print("[ERROR] Formato inválido. Usa: 'NoTerminal -> producción' o 'NoTerminal : producción'")
+            print("        Ejemplo: S -> C C  o  S : C C")
+            continue
+        
+        partes = entrada.split(separador, 1)
+        no_terminal = partes[0].strip()
+        produccion_str = partes[1].strip() if len(partes) > 1 else ""
+        
+        if not no_terminal:
+            print("[ERROR] El no terminal no puede estar vacío.")
+            continue
+        
+        # Procesar la producción
+        if not produccion_str or produccion_str.lower() == 'epsilon' or produccion_str == 'ε':
+            # Producción epsilon
+            produccion = []
+        else:
+            # Dividir por espacios
+            produccion = produccion_str.split()
+        
+        # Agregar la producción
+        grammar.add_production(no_terminal, produccion)
+        produccion_count += 1
+        
+        prod_display = ' '.join(produccion) if produccion else 'ε'
+        print(f"  ✓ Agregada: {no_terminal} → {prod_display}")
+    
+    if produccion_count > 0:
+        print(f"\n[OK] Se agregaron {produccion_count} producciones.")
+        print("\nGramática creada:")
+        print("-" * 80)
+        
+        # Mostrar la gramática creada
+        for i, (nt, prod) in enumerate(grammar.productions):
+            prod_str = ' '.join(prod) if prod else 'ε'
+            print(f"  {i + 1}. {nt} → {prod_str}")
+        
+        return grammar
+    else:
+        return None
+
+
 def print_header(title):
     """Imprime un encabezado formateado"""
     print("\n" + "=" * 80)
@@ -374,11 +609,76 @@ def demo_interactivo():
             print(f"\n{key}. {info['nombre']}")
             print(f"   {info['descripcion']}")
         
-        print(f"\n{len(gramaticas) + 1}. Salir")
+        print(f"\n7. Crear tu propia gramática")
+        print(f"   Ingresa una gramática personalizada de forma interactiva")
+        
+        print(f"\n8. Salir")
 
-        opcion = input(f"\nSelecciona una opcion (1-{len(gramaticas) + 1}): ").strip()
+        opcion = input(f"\nSelecciona una opcion (1-8): ").strip()
 
-        if opcion in gramaticas:
+        if opcion == "7":
+            # Crear gramática personalizada
+            grammar = crear_gramatica_personalizada()
+            
+            if grammar is None:
+                print("\n[ERROR] No se pudo crear la gramática.")
+                continue
+            
+            print_section("Análisis de Gramática Personalizada")
+            
+            # Confirmar antes de procesar
+            confirmar = input("\n¿Proceder con el análisis? (s/n): ").strip().lower()
+            if confirmar != 's':
+                print("[INFO] Análisis cancelado.")
+                continue
+            
+            try:
+                parser = LR1Parser(grammar)
+                parser.build()
+
+                grammar.print_grammar()
+                grammar.print_sets(parser.first, parser.follow)
+                parser.print_parsing_table()
+                parser.print_closure_table()
+                
+                # Generar gráficos
+                print("\nGenerando gráficos del autómata...")
+                filename = "automaton_personalizada"
+                graficos_generados = []
+                
+                # Intentar generar autómata completo
+                try:
+                    print(f"  [+] Generando autómata completo...")
+                    parser.visualize_automaton(filename)
+                    graficos_generados.append(f"{filename}.png (detallado con reglas)")
+                    print(f"      ✓ {filename}.png creado")
+                except Exception as e:
+                    print(f"      ✗ Error: {e}")
+                
+                # Intentar generar autómata simplificado
+                try:
+                    print(f"  [+] Generando autómata simplificado...")
+                    parser.visualize_simplified_automaton(filename)
+                    graficos_generados.append(f"{filename}_simplified.png (solo kernel)")
+                    print(f"      ✓ {filename}_simplified.png creado")
+                except Exception as e:
+                    print(f"      ✗ Error: {e}")
+                
+                if graficos_generados:
+                    print(f"\n[OK] Gráficos generados:")
+                    for g in graficos_generados:
+                        print(f"  - {g}")
+                else:
+                    print(f"\n[WARNING] No se pudieron generar gráficos.")
+                    print("  Verifica que Graphviz esté instalado correctamente.")
+
+                input("\nPresiona Enter para continuar...")
+            except Exception as e:
+                print(f"\n[ERROR] Error al construir el parser: {e}")
+                print("Verifica que la gramática sea válida.")
+                input("\nPresiona Enter para continuar...")
+        
+        elif opcion in gramaticas:
             gram_info = gramaticas[opcion]
             print_section(f"Analisis: {gram_info['nombre']}")
             print(f"\n{gram_info['descripcion']}")
@@ -413,7 +713,7 @@ def demo_interactivo():
                 print("  Instala Graphviz para habilitar esta funcionalidad")
 
             input("\nPresiona Enter para continuar...")
-        elif opcion == str(len(gramaticas) + 1):
+        elif opcion == "8":
             print("\n" + "=" * 80)
             print("Gracias por usar el Parser LR(1)!")
             print("=" * 80)
