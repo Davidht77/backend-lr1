@@ -295,10 +295,12 @@ class LR1Parser:
 
     def build_automaton(self):
         """Construye el autómata LR(1)"""
-        # Estado inicial
+        # Estado inicial: [S' -> . S, $]
+        # self.grammar.productions[0] es (S', [S])
+        # Necesitamos la producción completa: [S]
         initial_item = LR1Item(
             self.augmented_start,
-            [self.grammar.productions[0][1][0]],
+            self.grammar.productions[0][1],  # Ya es la lista correcta [S]
             0,
             self.grammar.end_marker,
         )
@@ -489,22 +491,40 @@ class LR1Parser:
             print(f"{idx}: {nt} -> {prod_str}")
 
     def visualize_automaton(self, filename="automaton_lr1"):
-        """Genera un gráfico del autómata LR(1)"""
-        dot = graphviz.Digraph(comment="Autómata LR(1)")
+        """Genera un gráfico completo del autómata LR(1) con todos los items"""
+        dot = graphviz.Digraph(comment="Autómata LR(1) - Completo con Clausura")
         dot.attr(rankdir="LR")
-        dot.attr("node", shape="rectangle", style="rounded")
+        dot.attr("node", shape="rectangle", style="rounded", fontsize="8")
 
-        # Añadir estados
+        # Añadir estados con TODOS los items (kernel + clausura)
         for idx, state in enumerate(self.states):
-            label = f"I{idx}\\n"
-            label += "\\n".join(
-                [
-                    str(item).replace("→", "->").replace("·", ".")
-                    for item in sorted(state, key=lambda x: str(x))
-                ][:5]
-            )
-            if len(state) > 5:
-                label += f"\\n... (+{len(state) - 5} items)"
+            # Separar items kernel de items de clausura
+            kernel_items = []
+            closure_items = []
+            
+            for item in state:
+                # Items kernel: punto > 0, o items iniciales
+                is_kernel = (
+                    item.dot_position > 0 or 
+                    (idx == 0 and item.non_terminal == self.augmented_start)
+                )
+                
+                item_str = str(item).replace("→", "->").replace("·", ".")
+                
+                if is_kernel or item.non_terminal == self.augmented_start:
+                    kernel_items.append(item_str)
+                else:
+                    closure_items.append(item_str)
+            
+            # Construir etiqueta: kernel primero, luego clausura
+            all_items = sorted(kernel_items) + sorted(closure_items)
+            
+            # Mostrar hasta 10 items
+            items_to_show = all_items[:10]
+            label = "\\n".join(items_to_show)
+            
+            if len(all_items) > 10:
+                label += f"\\n... (+{len(all_items) - 10} items)"
 
             # Estado de aceptación
             if any(
@@ -521,9 +541,9 @@ class LR1Parser:
             else:
                 dot.node(str(idx), label)
 
-        # Añadir transiciones
+        # Añadir transiciones con el símbolo
         for (src, symbol), dest in self.transitions.items():
-            dot.edge(str(src), str(dest), label=symbol)
+            dot.edge(str(src), str(dest), label=symbol, fontsize="9")
 
         # Guardar
         try:
@@ -536,36 +556,73 @@ class LR1Parser:
             )
 
     def visualize_simplified_automaton(self, filename="automaton_lr1_simplified"):
-        """Genera un gráfico simplificado del autómata LR(1)"""
-        dot = graphviz.Digraph(comment="Autómata LR(1) Simplificado")
+        """Genera un gráfico con items kernel del autómata LR(1)"""
+        dot = graphviz.Digraph(comment="Autómata LR(1) - Items Kernel")
         dot.attr(rankdir="LR")
-        dot.attr("node", shape="circle")
+        dot.attr("node", shape="rectangle", style="rounded", fontsize="9")
 
-        # Añadir estados (solo números)
+        # Añadir estados con items kernel únicamente
         for idx in range(len(self.states)):
+            state = self.states[idx]
+            
+            # Identificar items kernel correctamente:
+            # - En I0: solo el item inicial S' -> . S
+            # - En otros estados: items donde dot_position > 0
+            kernel_items = []
+            
+            for item in state:
+                is_kernel = False
+                
+                if idx == 0:
+                    # Estado inicial: solo el item aumentado
+                    if item.non_terminal == self.augmented_start and item.dot_position == 0:
+                        is_kernel = True
+                else:
+                    # Otros estados: items con punto > 0 (resultado de GOTO)
+                    if item.dot_position > 0:
+                        is_kernel = True
+                
+                if is_kernel:
+                    # Construir representación completa con lookahead
+                    prod_list = list(item.production)
+                    prod_list.insert(item.dot_position, "•")
+                    prod_str = " ".join(prod_list) if prod_list != ["•"] else "•"
+                    # Formato: [A → α • β, a]
+                    rule = f"[{item.non_terminal}→{prod_str}, {item.lookahead}]"
+                    kernel_items.append(rule)
+            
+            # Mostrar items kernel
+            if kernel_items:
+                label = "\\n".join(sorted(kernel_items)[:8])  # Mostrar hasta 8 items
+                if len(kernel_items) > 8:
+                    label += f"\\n... (+{len(kernel_items) - 8} items)"
+            else:
+                label = "VACÍO"
+            
+            # Marcar estado de aceptación
             if any(
                 item.non_terminal == self.augmented_start and item.next_symbol() is None
-                for item in self.states[idx]
+                for item in state
             ):
                 dot.node(
                     str(idx),
-                    f"I{idx}",
+                    label,
                     shape="doublecircle",
-                    style="filled",
+                    style="rounded,filled",
                     fillcolor="lightgreen",
                 )
             else:
-                dot.node(str(idx), f"I{idx}")
+                dot.node(str(idx), label)
 
-        # Añadir transiciones
+        # Añadir transiciones con el símbolo
         for (src, symbol), dest in self.transitions.items():
-            dot.edge(str(src), str(dest), label=symbol)
+            dot.edge(str(src), str(dest), label=symbol, fontsize="9")
 
         # Guardar
         try:
             dot.render(filename, format="png", cleanup=True)
             print(
-                f"[OK] Grafico simplificado guardado como '{filename}_simplified.png'"
+                f"[OK] Grafico con items kernel guardado como '{filename}_simplified.png'"
             )
         except Exception as e:
             print(f"[WARNING] No se pudo generar el grafico simplificado: {e}")

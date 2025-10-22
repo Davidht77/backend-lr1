@@ -1,269 +1,234 @@
-# Parser LR(1) Completo en Python
+# Parser LR(1) - Análisis Sintáctico
 
-Un parser LR(1) (Left-to-right, Rightmost derivation, 1 lookahead) completamente funcional implementado en Python desde cero, sin errores y siguiendo la lógica estándar del análisis sintáctico LR(1).
+Implementación completa de un Parser LR(1) con visualización gráfica del autómata.
 
-## 🎯 Características
+## 📁 Archivos Esenciales del Programa
 
-Este parser implementa todas las funcionalidades requeridas para un análisis LR(1) completo:
+### 🔧 Archivos NECESARIOS (No Borrar)
 
-- ✅ **Cálculo de Terminales y No Terminales**: Identificación automática de símbolos
-- ✅ **Conjuntos FIRST**: Cálculo correcto con soporte para producciones epsilon
-- ✅ **Conjuntos FOLLOW**: Cálculo basado en FIRST con propagación correcta
-- ✅ **Items LR(1)**: Representación de items canónicos con lookahead
-- ✅ **Clausura (Closure)**: Cálculo de clausura de conjuntos de items
-- ✅ **Función GOTO**: Transiciones entre estados del autómata
-- ✅ **Autómata LR(1)**: Construcción completa del AFD
-- ✅ **Tabla de Parsing**: Tablas ACTION y GOTO completas
-- ✅ **Visualización Gráfica**: Generación de gráficos del autómata (AFD/AFN)
-- ✅ **Detección de Conflictos**: Identifica conflictos shift-reduce y reduce-reduce
+#### 1. `lr1_parser.py` ⭐ CORE
+El archivo principal con toda la lógica del parser:
+- Clase `Grammar`: Manejo de gramáticas libres de contexto
+- Clase `LR1Item`: Representación de items LR(1)
+- Clase `LR1Parser`: Parser completo con:
+  - Cálculo de FIRST y FOLLOW
+  - Construcción del autómata LR(1)
+  - Generación de tabla de parsing
+  - Visualización gráfica del autómata
 
-## 📋 Requisitos
+#### 2. `demo.py` 🎯 INTERFAZ
+Demo interactiva con 6 gramáticas predefinidas:
+- Expresiones Aritméticas
+- Lista de elementos  
+- Declaraciones
+- Paréntesis balanceados
+- Expresiones booleanas
+- Asignaciones
 
-### Python
-- Python 3.7 o superior
-
-### Dependencias
-```bash
-pip install graphviz
+#### 3. `requirements.txt` 📦 DEPENDENCIAS
+```
+graphviz
 ```
 
-### Graphviz (para gráficos)
-Necesitas instalar Graphviz en tu sistema:
+#### 4. `README.md` 📖 DOCUMENTACIÓN
+Este archivo con instrucciones de uso.
 
-- **Windows**: Descarga desde https://graphviz.org/download/ y añade al PATH
-- **Linux**: `sudo apt-get install graphviz`
-- **macOS**: `brew install graphviz`
+### 🧪 Archivos Opcionales
+
+- `test_parser.py` - Tests unitarios (recomendado para desarrollo)
+
+### 🖼️ Archivos Generados Automáticamente
+
+Estos archivos se crean al ejecutar el programa y pueden borrarse:
+- `automaton_*.png` - Gráficos del autómata completo
+- `automaton_*_simplified.png` - Gráficos con items kernel
 
 ## 🚀 Instalación
 
-1. Clona o descarga este repositorio
-2. Instala las dependencias:
+### Requisitos Previos
+
+1. **Python 3.7+**
+2. **Graphviz**: https://graphviz.org/download/
+   - Windows: Descargar e instalar, añadir al PATH
+   - Linux: `sudo apt-get install graphviz`
+   - macOS: `brew install graphviz`
+
+### Instalar Dependencias
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ## 💻 Uso
 
-### Ejecución Simple
+### Ejecutar Demo Interactivo
 
 ```bash
-python lr1_parser.py
+python demo.py
 ```
 
-El programa te pedirá seleccionar una de las gramáticas de ejemplo incluidas.
+Selecciona una gramática del menú y el programa:
+1. Mostrará las producciones
+2. Calculará FIRST y FOLLOW
+3. Generará la tabla de parsing
+4. Creará gráficos PNG del autómata
 
-### Usar en tu Código
+### Usar en Tu Código
 
 ```python
 from lr1_parser import Grammar, LR1Parser
 
-# Crear una gramática
+# Crear gramática
 grammar = Grammar()
 grammar.add_production("E", ["E", "+", "T"])
 grammar.add_production("E", ["T"])
-grammar.add_production("T", ["T", "*", "F"])
-grammar.add_production("T", ["F"])
-grammar.add_production("F", ["(", "E", ")"])
-grammar.add_production("F", ["id"])
+grammar.add_production("T", ["id"])
 
-# Crear y construir el parser
+# Construir parser
 parser = LR1Parser(grammar)
 parser.build()
 
-# Mostrar resultados
+# Ver resultados
 grammar.print_grammar()
-grammar.print_sets(parser.first, parser.follow)
-parser.print_automaton()
 parser.print_parsing_table()
 
 # Generar gráficos
-parser.visualize_automaton()
-parser.visualize_simplified_automaton()
+parser.visualize_automaton("mi_automata")
+parser.visualize_simplified_automaton("mi_automata")
 ```
 
-## 📊 Gramáticas de Ejemplo
+## 📊 Características
 
-### Gramática 1: Expresiones Aritméticas
-```
-E → E + T | T
-T → T * F | F
-F → ( E ) | id
-```
+### ✅ Funcionalidades Implementadas
 
-Esta gramática modela expresiones aritméticas con suma, multiplicación y paréntesis.
+- ✓ Cálculo automático de terminales y no terminales
+- ✓ Conjuntos FIRST con soporte para epsilon
+- ✓ Conjuntos FOLLOW con propagación correcta
+- ✓ Items LR(1) con lookaheads
+- ✓ Función CLOSURE para derivar items
+- ✓ Función GOTO para transiciones
+- ✓ Construcción del autómata LR(1) (AFD)
+- ✓ Tabla de parsing (ACTION y GOTO)
+- ✓ Detección de conflictos
+- ✓ Visualización gráfica completa
 
-### Gramática 2: Produciones Múltiples
-```
-S → A a | b A c | d c | b d a
-A → d
-```
+### 📈 Dos Tipos de Visualización
 
-### Gramática 3: Recursión Simple
-```
-S → S + A | A
-A → ( S ) | a
-```
+#### 1. Autómata Completo (`automaton_*.png`)
+- Muestra **items kernel + clausura**
+- Hasta 10 items por estado
+- Formato: `[A -> α . β, a]`
+- Para análisis detallado
 
-## 🔍 Salida del Programa
+#### 2. Items Kernel (`automaton_*_simplified.png`)
+- Solo **items kernel** (esenciales)
+- Hasta 8 items por estado
+- Formato: `[A → α • β, a]`
+- Más compacto y legible
 
-El parser genera la siguiente información:
-
-### 1. Gramática Original
-Muestra todas las producciones de la gramática.
-
-### 2. Terminales y No Terminales
-```
-Terminales: ['$', '(', ')', '*', '+', 'id']
-No Terminales: ['E', "E'", 'F', 'T']
-```
-
-### 3. Conjuntos FIRST
-```
-FIRST(E) = { (, id }
-FIRST(F) = { (, id }
-FIRST(T) = { (, id }
-```
-
-### 4. Conjuntos FOLLOW
-```
-FOLLOW(E) = { $, ), + }
-FOLLOW(F) = { $, ), *, + }
-FOLLOW(T) = { $, ), +, * }
-```
-
-### 5. Autómata LR(1)
-Muestra todos los estados con sus items LR(1) y transiciones:
-```
-Estado I0:
-  [E' → ·E, $]
-  [E → ·E + T, $]
-  [E → ·E + T, +]
-  [E → ·T, $]
-  ...
-```
-
-### 6. Tabla de Parsing
-Tabla completa con acciones (shift, reduce, accept) y GOTOs:
-```
-Estado | ACTION                              | GOTO
-       | (   )   *   +   id  $              | E   F   T
-------------------------------------------------------------
-0      | s4              s5                 | 1       2   3
-1      |         s6              acc        |
-...
-```
-
-### 7. Gráficos Visuales
-- `automaton_lr1.png`: Gráfico detallado con items en cada estado
-- `automaton_lr1_simplified.png`: Gráfico simplificado solo con números de estado
-
-## 📁 Estructura del Código
-
-### Clase `Grammar`
-Representa una gramática libre de contexto y proporciona:
-- Gestión de producciones
-- Cálculo de terminales y no terminales
-- Cálculo de conjuntos FIRST
-- Cálculo de conjuntos FOLLOW
-- Funciones de impresión
-
-### Clase `LR1Item`
-Representa un item LR(1): `[A → α·β, a]`
-- `non_terminal`: Símbolo del lado izquierdo
-- `production`: Secuencia de símbolos del lado derecho
-- `dot_position`: Posición del punto en la producción
-- `lookahead`: Símbolo de lookahead
-
-### Clase `LR1Parser`
-Implementa el parser LR(1) completo:
-- `closure()`: Calcula la clausura de items
-- `goto()`: Calcula transiciones entre estados
-- `build_automaton()`: Construye el autómata LR(1)
-- `build_parsing_table()`: Construye las tablas ACTION y GOTO
-- `visualize_automaton()`: Genera gráficos del autómata
-
-## 🎓 Conceptos Teóricos
-
-### ¿Qué es LR(1)?
-
-LR(1) es un tipo de parser ascendente (bottom-up) que:
-- **L**: Lee la entrada de izquierda a derecha (Left-to-right)
-- **R**: Construye una derivación por la derecha en reversa (Rightmost derivation)
-- **1**: Usa un símbolo de lookahead
-
-### Ventajas de LR(1)
-- Más potente que SLR(1) y LALR(1)
-- Maneja una clase más amplia de gramáticas
-- Menos conflictos que otros parsers LR
-
-### Desventajas
-- Genera más estados que LALR(1)
-- Requiere más memoria
+## 🔑 Conceptos Clave
 
 ### Items LR(1)
-Un item LR(1) tiene la forma `[A → α·β, a]` donde:
-- `A → αβ` es una producción
-- El punto `·` indica cuánto se ha reconocido
-- `a` es el símbolo de lookahead (lo que esperamos después)
 
-## 🔧 Personalización
+Formato: `[A -> α • β, a]`
+- `A`: No terminal
+- `α`: Símbolos procesados (antes del punto)
+- `•`: Posición actual
+- `β`: Símbolos pendientes (después del punto)
+- `a`: Lookahead (token de búsqueda anticipada)
 
-### Añadir tu Propia Gramática
+### Items Kernel
 
-```python
-def create_custom_grammar():
-    grammar = Grammar()
-    
-    # Añade tus producciones
-    grammar.add_production("S", ["A", "B"])
-    grammar.add_production("A", ["a"])
-    grammar.add_production("B", ["b"])
-    
-    return grammar
+Los items que **definen cada estado**:
+- **Estado I0**: Solo `[S' → • S, $]` (item inicial aumentado)
+- **Otros estados**: Items donde `dot_position > 0`
 
-# Usar la gramática personalizada
-grammar = create_custom_grammar()
-parser = LR1Parser(grammar)
-parser.build()
+Los **items de clausura** se derivan de los kernel mediante `CLOSURE()`.
+
+## 📝 Estructura del Código
+
+```
+lr1_parser.py (676 líneas)
+├── Grammar
+│   ├── add_production()      # Añadir producciones
+│   ├── compute_first()       # Calcular FIRST
+│   ├── compute_follow()      # Calcular FOLLOW
+│   └── print_grammar()       # Mostrar gramática
+│
+├── LR1Item
+│   ├── next_symbol()         # Símbolo después del punto
+│   └── advance()             # Mover punto una posición
+│
+└── LR1Parser
+    ├── build()               # Construir parser completo
+    ├── closure()             # Clausura de items
+    ├── goto()                # Transiciones
+    ├── build_automaton()     # Construir AFD
+    ├── build_parsing_table() # Generar tablas
+    ├── visualize_automaton() # Gráfico completo
+    └── visualize_simplified_automaton() # Gráfico kernel
 ```
 
-### Producciones Epsilon
+## 🎓 Ejemplo de Salida
 
-Para representar producciones vacías (ε):
-```python
-grammar.add_production("A", [])  # A → ε
+```
+============================================================
+GRAMÁTICA
+============================================================
+E' -> E
+E -> E + T | T
+T -> id
+
+============================================================
+CONJUNTOS FIRST
+============================================================
+FIRST(E) = { id }
+FIRST(T) = { id }
+
+============================================================
+TABLA DE PARSING LR(1)
+============================================================
+Estado   | ACTION               | GOTO
+         | $    +    id         | E    T
+---------+---------------------+-------
+0        |           s1         | 3    2
+1        | r2   r2              |
+2        | r1   r1              |
+3        | acc  s4              |
+4        |           s1         |      5
+5        | r0   r0              |
+
+============================================================
 ```
 
-## ⚠️ Conflictos
+Además se generan dos archivos PNG con los gráficos del autómata.
 
-El parser detecta automáticamente conflictos:
-- **Shift-Reduce**: Cuando hay ambigüedad entre desplazar o reducir
-- **Reduce-Reduce**: Cuando hay ambigüedad entre dos reducciones
+## 🗂️ Resumen de Archivos
 
-Los conflictos se muestran en la salida con el símbolo ⚠️.
+| Archivo | Tipo | ¿Necesario? | Descripción |
+|---------|------|-------------|-------------|
+| `lr1_parser.py` | Python | ✅ SÍ | Core del parser |
+| `demo.py` | Python | ✅ SÍ | Interfaz interactiva |
+| `requirements.txt` | Texto | ✅ SÍ | Dependencias |
+| `README.md` | Markdown | ✅ SÍ | Documentación |
+| `test_parser.py` | Python | ⚠️ Opcional | Tests unitarios |
+| `automaton_*.png` | Imagen | ❌ NO | Generados automáticamente |
+| `__pycache__/` | Carpeta | ❌ NO | Archivos compilados Python |
+
+## ⚠️ Notas
+
+- Graphviz debe estar **instalado en el sistema**, no solo el paquete Python
+- Los gráficos se generan en el directorio actual
+- Los archivos PNG se sobrescriben en cada ejecución
+- Estados de aceptación: doble círculo verde
 
 ## 📚 Referencias
 
-- Aho, A. V., Lam, M. S., Sethi, R., & Ullman, J. D. (2006). *Compilers: Principles, Techniques, and Tools* (2nd ed.). Addison-Wesley.
-- Dragon Book - Capítulo 4: Análisis Sintáctico
-- Teoría de Autómatas y Lenguajes Formales
-
-## 🤝 Contribuciones
-
-Este es un proyecto educativo. Siéntete libre de:
-- Añadir nuevas gramáticas de ejemplo
-- Mejorar la visualización
-- Optimizar algoritmos
-- Añadir funcionalidad de parsing real (evaluación de cadenas)
-
-## 📝 Licencia
-
-Este proyecto es de código abierto y está disponible para uso educativo.
-
-## 👨‍💻 Autor
-
-Implementación completa del parser LR(1) siguiendo la teoría de compiladores estándar.
+- Compiladores: Principios, Técnicas y Herramientas (Aho, Sethi, Ullman)
+- Modern Compiler Implementation (Andrew Appel)
 
 ---
 
-**Nota**: Este parser es completamente funcional y libre de errores. Implementa correctamente toda la lógica LR(1) incluyendo el cálculo de FIRST, FOLLOW, construcción del autómata, y generación de la tabla de parsing.
+**Autor:** Davidht77  
+**Repositorio:** backend-lr1  
+**Fecha:** Octubre 2025

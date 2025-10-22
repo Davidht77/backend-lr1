@@ -296,48 +296,124 @@ def demo_comparacion_gramaticas():
 
 
 def demo_interactivo():
-    """Menu interactivo para explorar el parser"""
+    """Menu interactivo para explorar diferentes gramaticas"""
     print_header("PARSER LR(1) - DEMO COMPLETA")
+
+    gramaticas = {
+        "1": {
+            "nombre": "Expresiones Aritmeticas",
+            "descripcion": "Gramatica clasica para expresiones con + y *",
+            "producciones": [
+                ("E", ["E", "+", "T"]),
+                ("E", ["T"]),
+                ("T", ["T", "*", "F"]),
+                ("T", ["F"]),
+                ("F", ["(", "E", ")"]),
+                ("F", ["id"])
+            ]
+        },
+        "2": {
+            "nombre": "Lista de elementos",
+            "descripcion": "Gramatica para listas separadas por comas",
+            "producciones": [
+                ("L", ["L", ",", "E"]),
+                ("L", ["E"]),
+                ("E", ["id"])
+            ]
+        },
+        "3": {
+            "nombre": "Declaraciones",
+            "descripcion": "Gramatica para declaraciones de variables",
+            "producciones": [
+                ("D", ["type", "L", ";"]),
+                ("L", ["L", ",", "id"]),
+                ("L", ["id"])
+            ]
+        },
+        "4": {
+            "nombre": "Parentesis balanceados",
+            "descripcion": "Gramatica para validar parentesis balanceados",
+            "producciones": [
+                ("S", ["(", "S", ")"]),
+                ("S", [])
+            ]
+        },
+        "5": {
+            "nombre": "Expresiones booleanas",
+            "descripcion": "Gramatica para expresiones con AND y OR",
+            "producciones": [
+                ("E", ["E", "or", "T"]),
+                ("E", ["T"]),
+                ("T", ["T", "and", "F"]),
+                ("T", ["F"]),
+                ("F", ["not", "F"]),
+                ("F", ["(", "E", ")"]),
+                ("F", ["true"]),
+                ("F", ["false"])
+            ]
+        },
+        "6": {
+            "nombre": "Asignaciones",
+            "descripcion": "Gramatica para statements de asignacion",
+            "producciones": [
+                ("S", ["id", "=", "E"]),
+                ("E", ["E", "+", "T"]),
+                ("E", ["T"]),
+                ("T", ["id"]),
+                ("T", ["num"])
+            ]
+        }
+    }
 
     while True:
         print("\n" + "=" * 80)
-        print("MENU PRINCIPAL")
+        print("MENU PRINCIPAL - SELECCIONA UNA GRAMATICA")
         print("=" * 80)
-        print("\n1. Demo paso a paso (recomendado para principiantes)")
-        print("2. Ejemplos rapidos de diferentes gramaticas")
-        print("3. Comparacion de gramaticas")
-        print("4. Ver tabla completa de una gramatica de ejemplo")
-        print("5. Salir")
+        
+        for key, info in gramaticas.items():
+            print(f"\n{key}. {info['nombre']}")
+            print(f"   {info['descripcion']}")
+        
+        print(f"\n{len(gramaticas) + 1}. Salir")
 
-        opcion = input("\nSelecciona una opcion (1-5): ").strip()
+        opcion = input(f"\nSelecciona una opcion (1-{len(gramaticas) + 1}): ").strip()
 
-        if opcion == "1":
-            demo_paso_a_paso()
-        elif opcion == "2":
-            demo_ejemplos_rapidos()
-            input("\nPresiona Enter para continuar...")
-        elif opcion == "3":
-            demo_comparacion_gramaticas()
-            input("\nPresiona Enter para continuar...")
-        elif opcion == "4":
-            print_section("Tabla Completa - Expresiones Aritmeticas")
+        if opcion in gramaticas:
+            gram_info = gramaticas[opcion]
+            print_section(f"Analisis: {gram_info['nombre']}")
+            print(f"\n{gram_info['descripcion']}")
+            
             grammar = Grammar()
-            grammar.add_production("E", ["E", "+", "T"])
-            grammar.add_production("E", ["T"])
-            grammar.add_production("T", ["T", "*", "F"])
-            grammar.add_production("T", ["F"])
-            grammar.add_production("F", ["(", "E", ")"])
-            grammar.add_production("F", ["id"])
+            for nt, prod in gram_info["producciones"]:
+                grammar.add_production(nt, prod)
 
             parser = LR1Parser(grammar)
             parser.build()
 
+            print("\nProducciones:")
+            for i, (nt, prod) in enumerate(grammar.productions):
+                prod_str = " ".join(prod) if prod else "epsilon"
+                print(f"  {i}. {nt} -> {prod_str}")
+
             grammar.print_grammar()
             grammar.print_sets(parser.first, parser.follow)
             parser.print_parsing_table()
+            
+            # Generar graficos
+            print("\nGenerando graficos del automata...")
+            try:
+                filename = f"automaton_{gram_info['nombre'].lower().replace(' ', '_')}"
+                parser.visualize_automaton(filename)
+                parser.visualize_simplified_automaton(filename)
+                print(f"\n[OK] Graficos generados:")
+                print(f"  - {filename}.png (detallado con reglas)")
+                print(f"  - {filename}_simplified.png (simplificado)")
+            except Exception as e:
+                print(f"\n[WARNING] No se pudieron generar graficos: {e}")
+                print("  Instala Graphviz para habilitar esta funcionalidad")
 
             input("\nPresiona Enter para continuar...")
-        elif opcion == "5":
+        elif opcion == str(len(gramaticas) + 1):
             print("\n" + "=" * 80)
             print("Gracias por usar el Parser LR(1)!")
             print("=" * 80)
