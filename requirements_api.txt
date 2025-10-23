@@ -1,0 +1,13 @@
+# Requirements para el Backend FastAPI - Parser LR(1)
+# Instalar con: pip install -r requirements.txt
+
+# Core dependencies (ya existentes)
+graphviz>=0.20
+
+# FastAPI y dependencias
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+
+# Opcional para desarrollo
+python-multipart>=0.0.6
