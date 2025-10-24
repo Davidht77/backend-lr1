@@ -317,33 +317,36 @@ def obtener_tabla_clausura_json(parser):
 
 
 def generar_graficos_base64(parser, filename_prefix="automaton_api"):
-    """Genera los gráficos del autómata y los convierte a base64."""
+    """Genera los gráficos del autómata LR(1) y los convierte a base64."""
     resultado = {
-        "automaton_full": None,
-        "automaton_simplified": None
+        "automaton_afn": None,  # AFN = clausura completa
+        "automaton_afd": None   # AFD = solo kernel
     }
     
     try:
-        full_path = f"{filename_prefix}_full"
-        parser.visualize_automaton(full_path)
+        # AFN - Autómata con clausura completa (todos los items)
+        afn_path = f"{filename_prefix}_afn"
+        parser.visualize_automaton(afn_path)
         
-        if os.path.exists(f"{full_path}.png"):
-            with open(f"{full_path}.png", "rb") as f:
-                resultado["automaton_full"] = base64.b64encode(f.read()).decode('utf-8')
-            os.remove(f"{full_path}.png")
+        if os.path.exists(f"{afn_path}.png"):
+            with open(f"{afn_path}.png", "rb") as f:
+                resultado["automaton_afn"] = base64.b64encode(f.read()).decode('utf-8')
+            os.remove(f"{afn_path}.png")
     except Exception as e:
-        print(f"Error generando autómata completo: {e}")
+        print(f"Error generando AFN (clausura completa): {e}")
     
     try:
-        simplified_path = f"{filename_prefix}_simplified"
-        parser.visualize_simplified_automaton(filename_prefix)
+        # AFD - Autómata con solo items kernel (versión compacta)
+        afd_path = f"{filename_prefix}_afd"
+        parser.visualize_simplified_automaton(afd_path)
         
-        if os.path.exists(f"{simplified_path}.png"):
-            with open(f"{simplified_path}.png", "rb") as f:
-                resultado["automaton_simplified"] = base64.b64encode(f.read()).decode('utf-8')
-            os.remove(f"{simplified_path}.png")
+        kernel_file = f"{afd_path}_kernel.png"
+        if os.path.exists(kernel_file):
+            with open(kernel_file, "rb") as f:
+                resultado["automaton_afd"] = base64.b64encode(f.read()).decode('utf-8')
+            os.remove(kernel_file)
     except Exception as e:
-        print(f"Error generando autómata simplificado: {e}")
+        print(f"Error generando AFD (solo kernel): {e}")
     
     return resultado
 

@@ -387,13 +387,17 @@ Content-Type: application/json
 
 ### 9. `/parse/graphs` - Gráficos en Base64
 
-Genera y retorna los gráficos del autómata en formato base64.
+Genera y retorna los gráficos del autómata LR(1) en formato base64.
+
+**Tipos de gráficos generados:**
+- **AFD (automaton_afn):** Items kernel individuales separados por lookahead (horizontal, muchos nodos)
+- **AFN (automaton_afd):** Todos los items (kernel + clausura) con transiciones item a item (vertical, clausura completa)
 
 **Request:**
 ```json
 POST http://localhost:8000/parse/graphs
 {
-  "grammar": "S -> C C\nC -> c C\nC -> d"
+  "grammar": "A -> A ( A )\nA -> epsilon"
 }
 ```
 
@@ -402,11 +406,15 @@ POST http://localhost:8000/parse/graphs
 {
   "success": true,
   "data": {
-    "automaton_full": "iVBORw0KGgoAAAANSUhEUgAA...",
-    "automaton_simplified": "iVBORw0KGgoAAAANSUhEUgAA..."
+    "automaton_afn": "iVBORw0KGgoAAAANSUhEUgAA...",
+    "automaton_afd": "iVBORw0KGgoAAAANSUhEUgAA..."
   }
 }
 ```
+
+**Campos:**
+- `automaton_afn`: Imagen en base64 del AFD - items kernel individuales (horizontal, LR)
+- `automaton_afd`: Imagen en base64 del AFN - todos los items con clausura completa (vertical, TB)
 
 ## 🌐 Ejemplo desde JavaScript (Frontend)
 

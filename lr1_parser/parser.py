@@ -371,64 +371,58 @@ class LR1Parser:
         return compact
 
     def visualize_automaton(self, filename="automaton_lr1"):
-        """Genera un gráfico completo del autómata LR(1) con todos los items"""
-        dot = graphviz.Digraph(comment="Autómata LR(1) - Completo con Clausura")
-        dot.attr(rankdir="LR")
-        dot.attr("node", shape="rectangle", style="rounded", fontsize="8")
-
-        # Añadir estados con TODOS los items (kernel + clausura)
+        """
+        Genera el AFD: solo items kernel agrupados por estado.
+        """
+        dot = graphviz.Digraph(comment="Autómata LR(1) - AFD (Items Kernel)")
+        dot.attr(rankdir="LR")  # Left to Right
+        dot.attr("node", shape="box", style="rounded", fontsize="10", fontname="Courier")
+        dot.attr("edge", fontsize="12", fontname="Arial")
+        
+        # Layout más compacto
+        dot.attr(ranksep="0.75")
+        dot.attr(nodesep="0.4")
+        
+        # Crear estados con items kernel agrupados
         for idx, state in enumerate(self.states):
-            # Separar items kernel de items de clausura
+            # Recolectar solo items kernel
             kernel_items = []
-            closure_items = []
             
             for item in state:
-                # Items kernel: punto > 0, o items iniciales
+                # Solo items kernel
                 is_kernel = (
                     item.dot_position > 0 or 
                     (idx == 0 and item.non_terminal == self.augmented_start)
                 )
                 
-                item_str = str(item).replace("→", "->").replace("·", ".")
-                
-                if is_kernel or item.non_terminal == self.augmented_start:
-                    kernel_items.append(item_str)
-                else:
-                    closure_items.append(item_str)
+                if is_kernel:
+                    # Construir el item con corchetes
+                    prod_list = list(item.production)
+                    prod_list.insert(item.dot_position, ".")
+                    
+                    # Formatear producción
+                    prod_str = " ".join(prod_list) if prod_list != ["."] else "."
+                    prod_str = prod_str.replace("ε", "").replace("  ", " ").strip()
+                    if prod_str == ".":
+                        prod_str = "."
+                    
+                    # Formatear como: [A → α . β, a]
+                    item_formatted = f"[{item.non_terminal} → {prod_str}, {item.lookahead}]"
+                    kernel_items.append(item_formatted)
             
-            # Construir etiqueta: kernel primero, luego clausura
-            all_items = sorted(kernel_items) + sorted(closure_items)
-            
-            # Mostrar hasta 10 items
-            items_to_show = all_items[:10]
-            label = "\\n".join(items_to_show)
-            
-            if len(all_items) > 10:
-                label += f"\\n... (+{len(all_items) - 10} items)"
-
-            # Estado de aceptación
-            if any(
-                item.non_terminal == self.augmented_start and item.next_symbol() is None
-                for item in state
-            ):
-                dot.node(
-                    str(idx),
-                    label,
-                    shape="doublecircle",
-                    style="rounded,filled",
-                    fillcolor="lightgreen",
-                )
-            else:
-                dot.node(str(idx), label)
-
-        # Añadir transiciones con el símbolo
+            # Si hay items kernel, crear el nodo
+            if kernel_items:
+                label = "\\n".join(kernel_items)
+                dot.node(str(idx), label, shape="box", style="rounded")
+        
+        # Añadir transiciones entre estados
         for (src, symbol), dest in self.transitions.items():
-            dot.edge(str(src), str(dest), label=symbol, fontsize="9")
+            dot.edge(str(src), str(dest), label=symbol, fontsize="10")
 
         # Guardar
         try:
             dot.render(filename, format="png", cleanup=True)
-            print(f"\n[OK] Grafico del automata guardado como '{filename}.png'")
+            print(f"\n[OK] AFD (Items kernel agrupados) guardado como '{filename}.png'")
         except Exception as e:
             print(f"\n[WARNING] No se pudo generar el grafico: {e}")
             print(
@@ -436,71 +430,82 @@ class LR1Parser:
             )
 
     def visualize_simplified_automaton(self, filename="automaton_lr1_simplified"):
-        """Genera un gráfico con items kernel del autómata LR(1)"""
-        dot = graphviz.Digraph(comment="Autómata LR(1) - Items Kernel")
-        dot.attr(rankdir="LR")
-        dot.attr("node", shape="rectangle", style="rounded", fontsize="9")
+        """
+        Genera el AFN: todos los items (kernel + clausura) con transiciones item a item.
+        """
+        dot = graphviz.Digraph(comment="Autómata LR(1) - AFN (Clausura Completa)")
+        dot.attr(rankdir="TB")  # Top to Bottom
+        dot.attr("node", shape="box", style="rounded", fontsize="10", fontname="Courier")
+        dot.attr("edge", fontsize="12", fontname="Arial")
+        
+        # Layout más limpio
+        dot.attr(ranksep="0.5")
+        dot.attr(nodesep="0.3")
+        
+        # Mapeo de (estado, item_str) -> node_id
+        node_map = {}
+        node_counter = 0
 
-        # Añadir estados con items kernel únicamente
-        for idx in range(len(self.states)):
-            state = self.states[idx]
-            
-            # Identificar items kernel correctamente
-            kernel_items = []
-            
+        # Crear un nodo por cada item (incluyendo clausura)
+        for idx, state in enumerate(self.states):
             for item in state:
-                is_kernel = False
+                # Construir el item con corchetes
+                prod_list = list(item.production)
+                prod_list.insert(item.dot_position, ".")
                 
-                if idx == 0:
-                    # Estado inicial: solo el item aumentado
-                    if item.non_terminal == self.augmented_start and item.dot_position == 0:
-                        is_kernel = True
-                else:
-                    # Otros estados: items con punto > 0
-                    if item.dot_position > 0:
-                        is_kernel = True
+                # Formatear producción
+                prod_str = " ".join(prod_list) if prod_list != ["."] else "."
+                prod_str = prod_str.replace("ε", "").replace("  ", " ").strip()
+                if prod_str == ".":
+                    prod_str = "."
                 
-                if is_kernel:
-                    # Construir representación completa con lookahead
-                    prod_list = list(item.production)
-                    prod_list.insert(item.dot_position, "•")
-                    prod_str = " ".join(prod_list) if prod_list != ["•"] else "•"
-                    rule = f"[{item.non_terminal}→{prod_str}, {item.lookahead}]"
-                    kernel_items.append(rule)
-            
-            # Mostrar items kernel
-            if kernel_items:
-                label = "\\n".join(sorted(kernel_items)[:8])
-                if len(kernel_items) > 8:
-                    label += f"\\n... (+{len(kernel_items) - 8} items)"
-            else:
-                label = "VACÍO"
-            
-            # Marcar estado de aceptación
-            if any(
-                item.non_terminal == self.augmented_start and item.next_symbol() is None
-                for item in state
-            ):
-                dot.node(
-                    str(idx),
-                    label,
-                    shape="doublecircle",
-                    style="rounded,filled",
-                    fillcolor="lightgreen",
-                )
-            else:
-                dot.node(str(idx), label)
+                # Formatear como: [A → α . β, a]
+                item_str = f"{item.non_terminal} → {prod_str}, {item.lookahead}"
+                label = f"[{item_str}]"
+                
+                # Crear identificador único
+                item_key = (idx, item_str)
+                
+                if item_key not in node_map:
+                    node_id = f"n{node_counter}"
+                    node_map[item_key] = node_id
+                    node_counter += 1
+                    dot.node(node_id, label, shape="box", style="rounded")
 
-        # Añadir transiciones
-        for (src, symbol), dest in self.transitions.items():
-            dot.edge(str(src), str(dest), label=symbol, fontsize="9")
+        # Crear transiciones entre items
+        for (src_state, symbol), dest_state in self.transitions.items():
+            # Para cada item en el estado origen
+            for src_item in self.states[src_state]:
+                # Solo si el item tiene el símbolo después del punto
+                if src_item.next_symbol() == symbol:
+                    # El item avanzado
+                    advanced_item = src_item.advance()
+                    
+                    # Construir representaciones
+                    prod_list_src = list(src_item.production)
+                    prod_list_src.insert(src_item.dot_position, ".")
+                    prod_str_src = " ".join(prod_list_src) if prod_list_src != ["."] else "."
+                    prod_str_src = prod_str_src.replace("ε", "").replace("  ", " ").strip()
+                    src_item_str = f"{src_item.non_terminal} → {prod_str_src}, {src_item.lookahead}"
+                    
+                    prod_list_adv = list(advanced_item.production)
+                    prod_list_adv.insert(advanced_item.dot_position, ".")
+                    prod_str_adv = " ".join(prod_list_adv) if prod_list_adv != ["."] else "."
+                    prod_str_adv = prod_str_adv.replace("ε", "").replace("  ", " ").strip()
+                    adv_item_str = f"{advanced_item.non_terminal} → {prod_str_adv}, {advanced_item.lookahead}"
+                    
+                    # Buscar el item avanzado en el estado destino
+                    src_key = (src_state, src_item_str)
+                    dest_key = (dest_state, adv_item_str)
+                    
+                    if src_key in node_map and dest_key in node_map:
+                        dot.edge(node_map[src_key], node_map[dest_key], 
+                               label=symbol, fontsize="10")
 
         # Guardar
         try:
-            output_filename = f"{filename}_simplified"
+            output_filename = f"{filename}_kernel"
             dot.render(output_filename, format="png", cleanup=True)
-            print(
-                f"[OK] Grafico con items kernel guardado como '{output_filename}.png'"
-            )
+            print(f"[OK] AFN (Clausura completa) guardado como '{output_filename}.png'")
         except Exception as e:
-            print(f"[WARNING] No se pudo generar el grafico simplificado: {e}")
+            print(f"[WARNING] No se pudo generar el grafico: {e}")
