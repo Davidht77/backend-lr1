@@ -410,6 +410,10 @@ Content-Type: application/json
 
 Genera y retorna los gráficos del autómata LR(1) en formato base64.
 
+**⚠️ IMPORTANTE PARA EL FRONTEND:**
+- Este endpoint retorna **directamente** los gráficos en `data.automaton_afn` y `data.automaton_afd`
+- Si usas `/parse` en su lugar, debes activar `generate_graphs: true` y los gráficos estarán en `data.graphs.automaton_afn` y `data.graphs.automaton_afd`
+
 **Tipos de gráficos generados:**
 - **AFD (automaton_afn):** Autómata Finito Determinista - Solo items kernel agrupados por estado
 - **AFN (automaton_afd):** Autómata Finito No-Determinista - Todos los items (kernel + clausura) con transiciones epsilon
@@ -433,9 +437,67 @@ POST http://localhost:8000/parse/graphs
 }
 ```
 
+**Usando el endpoint /parse con gráficos:**
+```json
+POST http://localhost:8000/parse
+{
+  "grammar": "A -> A ( A )\nA -> epsilon",
+  "generate_graphs": true
+}
+```
+
+**Response con gráficos:**
+```json
+{
+  "success": true,
+  "data": {
+    "grammar": {...},
+    "symbols": {...},
+    "first_follow": {...},
+    "automaton": {...},
+    "parsing_table": {...},
+    "closure_table": [...],
+    "graphs": {
+      "automaton_afn": "iVBORw0KGgoAAAANSUhEUgAA...",
+      "automaton_afd": "iVBORw0KGgoAAAANSUhEUgAA..."
+    }
+  }
+}
+```
+
 **Campos:**
 - `automaton_afn`: Imagen en base64 del **AFD** - Items kernel agrupados por estado (formato: `A → α . β, a`)
 - `automaton_afd`: Imagen en base64 del **AFN** - Todos los items con clausura completa y transiciones epsilon (formato: `A → α . β, a`)
+
+**Uso en el frontend:**
+```javascript
+// Opción 1: Usar /parse/graphs (más eficiente si solo necesitas gráficos)
+const response = await fetch('http://localhost:8000/parse/graphs', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ grammar: "S -> A\nA -> a" })
+});
+const result = await response.json();
+if (result.success) {
+  const afdImage = result.data.automaton_afn;  // ← Directamente en data
+  const afnImage = result.data.automaton_afd;  // ← Directamente en data
+}
+
+// Opción 2: Usar /parse con generate_graphs: true
+const response = await fetch('http://localhost:8000/parse', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    grammar: "S -> A\nA -> a",
+    generate_graphs: true  // ← Importante!
+  })
+});
+const result = await response.json();
+if (result.success) {
+  const afdImage = result.data.graphs.automaton_afn;  // ← En data.graphs
+  const afnImage = result.data.graphs.automaton_afd;  // ← En data.graphs
+}
+```
 
 ## 🌐 Ejemplo desde JavaScript (Frontend)
 
