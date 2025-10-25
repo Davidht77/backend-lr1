@@ -18,7 +18,28 @@ Una vez iniciado el servidor, accede a:
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
-## 🔌 Endpoints Disponibles
+## 📋 Formato de Items y Estados
+
+**Importante:** Los items LR(1) ahora se muestran **sin corchetes** para mejor legibilidad:
+
+- **Formato actual:** `A → α . β, a` ✓
+- **Formato antiguo:** `[A → α . β, a]` ✗ (obsoleto)
+- **Ejemplo:** `S' → . S, $` representa el item inicial con punto antes de S y lookahead $
+- **En gráficos:** Los estados se visualizan como elipses con items sin corchetes
+
+**Mejoras de visualización:**
+- Items sin corchetes en todas las respuestas JSON
+- Estados en forma de elipse (en lugar de cajas rectangulares)
+- Dirección Left-to-Right (LR) para el AFD
+- Transiciones epsilon (ε) en gris punteado para el AFN
+
+Este formato aplica a:
+- ✓ Respuestas JSON del autómata (`/parse/automaton`)
+- ✓ Tabla de clausura (`/parse/closure`)
+- ✓ Gráficos generados (`/parse/graphs`)
+- ✓ Todos los endpoints que retornan items
+
+## �🔌 Endpoints Disponibles
 
 ### 1. `/parse` - Procesamiento Completo (Recomendado)
 
@@ -390,8 +411,8 @@ Content-Type: application/json
 Genera y retorna los gráficos del autómata LR(1) en formato base64.
 
 **Tipos de gráficos generados:**
-- **AFD (automaton_afn):** Items kernel individuales separados por lookahead (horizontal, muchos nodos)
-- **AFN (automaton_afd):** Todos los items (kernel + clausura) con transiciones item a item (vertical, clausura completa)
+- **AFD (automaton_afn):** Autómata Finito Determinista - Solo items kernel agrupados por estado
+- **AFN (automaton_afd):** Autómata Finito No-Determinista - Todos los items (kernel + clausura) con transiciones epsilon
 
 **Request:**
 ```json
@@ -413,8 +434,8 @@ POST http://localhost:8000/parse/graphs
 ```
 
 **Campos:**
-- `automaton_afn`: Imagen en base64 del AFD - items kernel individuales (horizontal, LR)
-- `automaton_afd`: Imagen en base64 del AFN - todos los items con clausura completa (vertical, TB)
+- `automaton_afn`: Imagen en base64 del **AFD** - Items kernel agrupados por estado (formato: `A → α . β, a`)
+- `automaton_afd`: Imagen en base64 del **AFN** - Todos los items con clausura completa y transiciones epsilon (formato: `A → α . β, a`)
 
 ## 🌐 Ejemplo desde JavaScript (Frontend)
 

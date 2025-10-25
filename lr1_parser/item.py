@@ -31,7 +31,11 @@ class LR1Item:
         prod_list = list(self.production)
         prod_list.insert(self.dot_position, ".")
         prod_str = " ".join(prod_list)
-        return f"[{self.non_terminal} -> {prod_str}, {self.lookahead}]"
+        return f"{self.non_terminal} → {prod_str}, {self.lookahead}"
+    
+    def __str__(self):
+        """Representación en string sin corchetes para API/visualización"""
+        return self.__repr__()
 
     def next_symbol(self):
         """Retorna el símbolo después del punto, o None si está al final"""

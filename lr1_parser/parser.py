@@ -376,12 +376,12 @@ class LR1Parser:
         """
         dot = graphviz.Digraph(comment="Autómata LR(1) - AFD (Items Kernel)")
         dot.attr(rankdir="LR")  # Left to Right
-        dot.attr("node", shape="box", style="rounded", fontsize="10", fontname="Courier")
-        dot.attr("edge", fontsize="12", fontname="Arial")
+        dot.attr("node", shape="ellipse", fontsize="11", fontname="Arial")
+        dot.attr("edge", fontsize="11", fontname="Arial")
         
-        # Layout más compacto
-        dot.attr(ranksep="0.75")
-        dot.attr(nodesep="0.4")
+        # Layout más espaciado y claro
+        dot.attr(ranksep="1.0")
+        dot.attr(nodesep="0.8")
         
         # Crear estados con items kernel agrupados
         for idx, state in enumerate(self.states):
@@ -396,7 +396,7 @@ class LR1Parser:
                 )
                 
                 if is_kernel:
-                    # Construir el item con corchetes
+                    # Construir el item SIN corchetes
                     prod_list = list(item.production)
                     prod_list.insert(item.dot_position, ".")
                     
@@ -406,18 +406,19 @@ class LR1Parser:
                     if prod_str == ".":
                         prod_str = "."
                     
-                    # Formatear como: [A → α . β, a]
-                    item_formatted = f"[{item.non_terminal} → {prod_str}, {item.lookahead}]"
+                    # Formatear como: A → α . β, a (SIN corchetes)
+                    item_formatted = f"{item.non_terminal} → {prod_str}, {item.lookahead}"
                     kernel_items.append(item_formatted)
             
             # Si hay items kernel, crear el nodo
             if kernel_items:
                 label = "\\n".join(kernel_items)
-                dot.node(str(idx), label, shape="box", style="rounded")
+                # Usar forma elíptica para estados
+                dot.node(str(idx), label, shape="ellipse", style="solid", penwidth="1.5")
         
         # Añadir transiciones entre estados
         for (src, symbol), dest in self.transitions.items():
-            dot.edge(str(src), str(dest), label=symbol, fontsize="10")
+            dot.edge(str(src), str(dest), label=f" {symbol} ", fontsize="11", penwidth="1.2")
 
         # Guardar
         try:
@@ -434,22 +435,23 @@ class LR1Parser:
         Genera el AFN: todos los items (kernel + clausura) con transiciones item a item.
         """
         dot = graphviz.Digraph(comment="Autómata LR(1) - AFN (Clausura Completa)")
-        dot.attr(rankdir="TB")  # Top to Bottom
-        dot.attr("node", shape="box", style="rounded", fontsize="10", fontname="Courier")
-        dot.attr("edge", fontsize="12", fontname="Arial")
+        dot.attr(rankdir="LR")  # Left to Right para mejor visualización
+        dot.attr("node", shape="ellipse", fontsize="10", fontname="Arial")
+        dot.attr("edge", fontsize="10", fontname="Arial")
         
-        # Layout más limpio
-        dot.attr(ranksep="0.5")
-        dot.attr(nodesep="0.3")
+        # Layout más espaciado
+        dot.attr(ranksep="0.8")
+        dot.attr(nodesep="0.5")
         
-        # Mapeo de (estado, item_str) -> node_id
+        # Mapeo de item_str -> node_id (sin distinguir por estado para evitar duplicados)
         node_map = {}
         node_counter = 0
 
-        # Crear un nodo por cada item (incluyendo clausura)
+        # Primero, recolectar todos los items únicos
+        all_items_set = set()
         for idx, state in enumerate(self.states):
             for item in state:
-                # Construir el item con corchetes
+                # Construir el item sin corchetes
                 prod_list = list(item.production)
                 prod_list.insert(item.dot_position, ".")
                 
@@ -459,20 +461,21 @@ class LR1Parser:
                 if prod_str == ".":
                     prod_str = "."
                 
-                # Formatear como: [A → α . β, a]
+                # Formatear como: A → α . β, a (SIN corchetes)
                 item_str = f"{item.non_terminal} → {prod_str}, {item.lookahead}"
-                label = f"[{item_str}]"
-                
-                # Crear identificador único
-                item_key = (idx, item_str)
-                
-                if item_key not in node_map:
-                    node_id = f"n{node_counter}"
-                    node_map[item_key] = node_id
-                    node_counter += 1
-                    dot.node(node_id, label, shape="box", style="rounded")
+                all_items_set.add(item_str)
+        
+        # Crear nodos para cada item único
+        for item_str in sorted(all_items_set):
+            node_id = f"n{node_counter}"
+            node_map[item_str] = node_id
+            node_counter += 1
+            # Label sin corchetes
+            dot.node(node_id, item_str, shape="ellipse")
 
-        # Crear transiciones entre items
+        # Crear transiciones entre items basadas en las transiciones del autómata
+        edges_added = set()  # Para evitar aristas duplicadas
+        
         for (src_state, symbol), dest_state in self.transitions.items():
             # Para cada item en el estado origen
             for src_item in self.states[src_state]:
@@ -481,7 +484,7 @@ class LR1Parser:
                     # El item avanzado
                     advanced_item = src_item.advance()
                     
-                    # Construir representaciones
+                    # Construir representaciones sin corchetes
                     prod_list_src = list(src_item.production)
                     prod_list_src.insert(src_item.dot_position, ".")
                     prod_str_src = " ".join(prod_list_src) if prod_list_src != ["."] else "."
@@ -494,13 +497,57 @@ class LR1Parser:
                     prod_str_adv = prod_str_adv.replace("ε", "").replace("  ", " ").strip()
                     adv_item_str = f"{advanced_item.non_terminal} → {prod_str_adv}, {advanced_item.lookahead}"
                     
-                    # Buscar el item avanzado en el estado destino
-                    src_key = (src_state, src_item_str)
-                    dest_key = (dest_state, adv_item_str)
-                    
-                    if src_key in node_map and dest_key in node_map:
-                        dot.edge(node_map[src_key], node_map[dest_key], 
-                               label=symbol, fontsize="10")
+                    # Crear arista si ambos items existen
+                    if src_item_str in node_map and adv_item_str in node_map:
+                        edge_key = (src_item_str, adv_item_str, symbol)
+                        if edge_key not in edges_added:
+                            dot.edge(node_map[src_item_str], node_map[adv_item_str], 
+                                   label=symbol, fontsize="10")
+                            edges_added.add(edge_key)
+        
+        # Añadir transiciones epsilon (clausura) dentro de cada estado
+        for idx, state in enumerate(self.states):
+            items_list = list(state)
+            # Identificar items kernel en este estado
+            kernel_items = []
+            for item in items_list:
+                is_kernel = (
+                    item.dot_position > 0 or 
+                    (idx == 0 and item.non_terminal == self.augmented_start)
+                )
+                if is_kernel:
+                    kernel_items.append(item)
+            
+            # Desde cada item kernel, crear aristas epsilon a items de clausura
+            for kernel_item in kernel_items:
+                # Formatear kernel item
+                prod_list_k = list(kernel_item.production)
+                prod_list_k.insert(kernel_item.dot_position, ".")
+                prod_str_k = " ".join(prod_list_k) if prod_list_k != ["."] else "."
+                prod_str_k = prod_str_k.replace("ε", "").replace("  ", " ").strip()
+                kernel_str = f"{kernel_item.non_terminal} → {prod_str_k}, {kernel_item.lookahead}"
+                
+                # Para cada item de clausura en este estado
+                for closure_item in items_list:
+                    if closure_item.dot_position == 0 and closure_item != kernel_item:
+                        # Este es un item de clausura
+                        prod_list_c = list(closure_item.production)
+                        prod_list_c.insert(closure_item.dot_position, ".")
+                        prod_str_c = " ".join(prod_list_c) if prod_list_c != ["."] else "."
+                        prod_str_c = prod_str_c.replace("ε", "").replace("  ", " ").strip()
+                        closure_str = f"{closure_item.non_terminal} → {prod_str_c}, {closure_item.lookahead}"
+                        
+                        # Verificar si debe haber una transición epsilon
+                        next_sym = kernel_item.next_symbol()
+                        if next_sym and next_sym in self.grammar.non_terminals:
+                            if closure_item.non_terminal == next_sym:
+                                # Hay una relación de clausura
+                                edge_key = (kernel_str, closure_str, "ε")
+                                if edge_key not in edges_added:
+                                    if kernel_str in node_map and closure_str in node_map:
+                                        dot.edge(node_map[kernel_str], node_map[closure_str], 
+                                               label="ε", fontsize="9", style="dashed", color="gray")
+                                        edges_added.add(edge_key)
 
         # Guardar
         try:
