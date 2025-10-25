@@ -351,14 +351,19 @@ if __name__ == "__main__":
     # Leer puerto de variable de entorno (Railway) o usar 8000 por defecto
     port = int(os.getenv("PORT", 8000))
     
+    # Detectar si estamos en producción (Railway) o desarrollo local
+    is_production = os.getenv("RAILWAY_ENVIRONMENT") is not None
+    
     print("=" * 80)
     print("Iniciando servidor FastAPI - Parser LR(1)")
     print("=" * 80)
     print(f"\nPuerto: {port}")
+    print(f"Modo: {'Producción' if is_production else 'Desarrollo'}")
     print("\nEndpoints disponibles:")
     print(f"  • http://localhost:{port}/docs       - Documentación interactiva (Swagger)")
     print(f"  • http://localhost:{port}/redoc      - Documentación alternativa (ReDoc)")
     print(f"  • http://localhost:{port}/parse      - Endpoint principal")
     print("=" * 80)
     
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    # En producción, no usar reload para evitar problemas con Railway
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=not is_production)
