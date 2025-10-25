@@ -241,16 +241,18 @@ El parser genera **dos tipos de gráficos** usando Graphviz:
 #### AFD (Autómata Finito Determinista)
 **Método:** `visualize_automaton()`
 
-- Muestra solo **items kernel** agrupados por estado
-- Items kernel: aquellos con punto > 0 (excepto estado inicial)
+- Muestra **todos los items del estado** (kernel + clausura)
+- Items agrupados por estado
 - Formato elipse sin corchetes
 - Dirección: Left-to-Right (LR)
 
 **Ejemplo de estado AFD:**
 ```
 ┌─────────────────────┐
-│ E → E . + T, $      │
-│ E → E . * T, $      │
+│ E → E . + T, $      │ ← Item kernel
+│ E → E . * T, $      │ ← Item kernel
+│ T → . id, +         │ ← Item de clausura
+│ T → . num, +        │ ← Item de clausura
 └─────────────────────┘
 ```
 

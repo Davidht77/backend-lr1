@@ -372,9 +372,9 @@ class LR1Parser:
 
     def visualize_automaton(self, filename="automaton_lr1"):
         """
-        Genera el AFD: solo items kernel agrupados por estado.
+        Genera el AFD: todos los items (kernel + clausura) agrupados por estado.
         """
-        dot = graphviz.Digraph(comment="Autómata LR(1) - AFD (Items Kernel)")
+        dot = graphviz.Digraph(comment="Autómata LR(1) - AFD (Todos los Items)")
         dot.attr(rankdir="LR")  # Left to Right
         dot.attr("node", shape="ellipse", fontsize="11", fontname="Arial")
         dot.attr("edge", fontsize="11", fontname="Arial")
@@ -383,36 +383,29 @@ class LR1Parser:
         dot.attr(ranksep="1.0")
         dot.attr(nodesep="0.8")
         
-        # Crear estados con items kernel agrupados
+        # Crear estados con TODOS los items (kernel + clausura)
         for idx, state in enumerate(self.states):
-            # Recolectar solo items kernel
-            kernel_items = []
+            # Recolectar TODOS los items del estado
+            all_items = []
             
             for item in state:
-                # Solo items kernel
-                is_kernel = (
-                    item.dot_position > 0 or 
-                    (idx == 0 and item.non_terminal == self.augmented_start)
-                )
+                # Construir el item SIN corchetes
+                prod_list = list(item.production)
+                prod_list.insert(item.dot_position, ".")
                 
-                if is_kernel:
-                    # Construir el item SIN corchetes
-                    prod_list = list(item.production)
-                    prod_list.insert(item.dot_position, ".")
-                    
-                    # Formatear producción
-                    prod_str = " ".join(prod_list) if prod_list != ["."] else "."
-                    prod_str = prod_str.replace("ε", "").replace("  ", " ").strip()
-                    if prod_str == ".":
-                        prod_str = "."
-                    
-                    # Formatear como: A → α . β, a (SIN corchetes)
-                    item_formatted = f"{item.non_terminal} → {prod_str}, {item.lookahead}"
-                    kernel_items.append(item_formatted)
+                # Formatear producción
+                prod_str = " ".join(prod_list) if prod_list != ["."] else "."
+                prod_str = prod_str.replace("ε", "").replace("  ", " ").strip()
+                if prod_str == ".":
+                    prod_str = "."
+                
+                # Formatear como: A → α . β, a (SIN corchetes)
+                item_formatted = f"{item.non_terminal} → {prod_str}, {item.lookahead}"
+                all_items.append(item_formatted)
             
-            # Si hay items kernel, crear el nodo
-            if kernel_items:
-                label = "\\n".join(kernel_items)
+            # Crear el nodo con todos los items
+            if all_items:
+                label = "\\n".join(all_items)
                 # Usar forma elíptica para estados
                 dot.node(str(idx), label, shape="ellipse", style="solid", penwidth="1.5")
         
@@ -423,7 +416,7 @@ class LR1Parser:
         # Guardar
         try:
             dot.render(filename, format="png", cleanup=True)
-            print(f"\n[OK] AFD (Items kernel agrupados) guardado como '{filename}.png'")
+            print(f"\n[OK] AFD (Todos los items: kernel + clausura) guardado como '{filename}.png'")
         except Exception as e:
             print(f"\n[WARNING] No se pudo generar el grafico: {e}")
             print(
