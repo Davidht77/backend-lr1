@@ -8,27 +8,30 @@ Si los gráficos retornan `null` en producción, es porque **Graphviz no está i
 
 Railway soporta dos métodos de deployment:
 
-### Opción 1: Nixpacks (Recomendado)
+### Opción 1: Nixpacks (Recomendado) ⭐
 
-Railway usa Nixpacks por defecto. El archivo `nixpacks.toml` ya está configurado:
+Railway usa Nixpacks por defecto si no hay Dockerfile. El archivo `nixpacks.toml` ya está configurado:
 
 ```toml
 [phases.setup]
-nixPkgs = ["...", "graphviz"]
+nixPkgs = ["graphviz"]
 ```
 
+**⚠️ IMPORTANTE:** Railway prioriza Dockerfile sobre Nixpacks. Si tienes ambos archivos, Railway usará Docker.
+
 **Pasos:**
-1. Asegúrate de que `nixpacks.toml` esté en la raíz del proyecto
-2. Haz commit y push:
+1. **Asegúrate de NO tener un `Dockerfile` en la raíz** (debe estar renombrado a `Dockerfile.backup`)
+2. Verifica que `nixpacks.toml` esté en la raíz del proyecto
+3. Haz commit y push:
    ```bash
-   git add nixpacks.toml
-   git commit -m "Add Graphviz dependency for Railway"
+   git add nixpacks.toml railway.json
+   git commit -m "Configure Nixpacks with Graphviz for Railway"
    git push
    ```
-3. Railway detectará automáticamente la configuración
-4. Redeploy el proyecto
+4. Railway detectará automáticamente Nixpacks
+5. Verifica en los logs que diga: **"Building with Nixpacks"**
 
-### Opción 2: Docker
+### Opción 2: Docker (Alternativa)
 
 Si prefieres usar Docker, Railway también lo soporta:
 

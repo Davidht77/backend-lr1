@@ -2,7 +2,7 @@
 # Instala Graphviz como dependencia del sistema
 
 [phases.setup]
-nixPkgs = ["...", "graphviz"]
+nixPkgs = ["graphviz"]
 
 [phases.install]
 cmds = ["pip install -r requirements_api.txt"]
