@@ -85,7 +85,17 @@ def root():
 @app.get("/health")
 def health_check():
     """Endpoint de health check."""
-    return {"status": "healthy", "service": "lr1-parser-api"}
+    import shutil
+    
+    # Verificar si graphviz está instalado
+    graphviz_installed = shutil.which("dot") is not None
+    
+    return {
+        "status": "healthy",
+        "service": "lr1-parser-api",
+        "graphviz_available": graphviz_installed,
+        "graphviz_path": shutil.which("dot") if graphviz_installed else None
+    }
 
 
 @app.post("/parse")

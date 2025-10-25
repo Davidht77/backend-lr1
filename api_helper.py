@@ -318,35 +318,56 @@ def obtener_tabla_clausura_json(parser):
 
 def generar_graficos_base64(parser, filename_prefix="automaton_api"):
     """Genera los gráficos del autómata LR(1) y los convierte a base64."""
+    import traceback
+    
     resultado = {
-        "automaton_afn": None,  # AFN = clausura completa
-        "automaton_afd": None   # AFD = solo kernel
+        "automaton_afn": None,  # AFD = solo kernel
+        "automaton_afd": None   # AFN = clausura completa
     }
     
     try:
-        # AFN - Autómata con clausura completa (todos los items)
+        # AFD - Autómata con solo items kernel
         afn_path = f"{filename_prefix}_afn"
+        print(f"[DEBUG] Generando AFD en: {afn_path}")
         parser.visualize_automaton(afn_path)
         
-        if os.path.exists(f"{afn_path}.png"):
-            with open(f"{afn_path}.png", "rb") as f:
-                resultado["automaton_afn"] = base64.b64encode(f.read()).decode('utf-8')
-            os.remove(f"{afn_path}.png")
+        expected_file = f"{afn_path}.png"
+        print(f"[DEBUG] Buscando archivo: {expected_file}")
+        print(f"[DEBUG] Existe: {os.path.exists(expected_file)}")
+        
+        if os.path.exists(expected_file):
+            with open(expected_file, "rb") as f:
+                data = f.read()
+                resultado["automaton_afn"] = base64.b64encode(data).decode('utf-8')
+                print(f"[DEBUG] AFD generado exitosamente, tamaño: {len(resultado['automaton_afn'])} chars")
+            os.remove(expected_file)
+        else:
+            print(f"[ERROR] No se encontró el archivo: {expected_file}")
     except Exception as e:
-        print(f"Error generando AFN (clausura completa): {e}")
+        print(f"[ERROR] Error generando AFD: {e}")
+        traceback.print_exc()
     
     try:
-        # AFD - Autómata con solo items kernel (versión compacta)
+        # AFN - Autómata con clausura completa (todos los items)
         afd_path = f"{filename_prefix}_afd"
+        print(f"[DEBUG] Generando AFN en: {afd_path}")
         parser.visualize_simplified_automaton(afd_path)
         
         kernel_file = f"{afd_path}_kernel.png"
+        print(f"[DEBUG] Buscando archivo: {kernel_file}")
+        print(f"[DEBUG] Existe: {os.path.exists(kernel_file)}")
+        
         if os.path.exists(kernel_file):
             with open(kernel_file, "rb") as f:
-                resultado["automaton_afd"] = base64.b64encode(f.read()).decode('utf-8')
+                data = f.read()
+                resultado["automaton_afd"] = base64.b64encode(data).decode('utf-8')
+                print(f"[DEBUG] AFN generado exitosamente, tamaño: {len(resultado['automaton_afd'])} chars")
             os.remove(kernel_file)
+        else:
+            print(f"[ERROR] No se encontró el archivo: {kernel_file}")
     except Exception as e:
-        print(f"Error generando AFD (solo kernel): {e}")
+        print(f"[ERROR] Error generando AFN: {e}")
+        traceback.print_exc()
     
     return resultado
 

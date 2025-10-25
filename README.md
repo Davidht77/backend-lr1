@@ -1,6 +1,17 @@
 # Parser LR(1) - Análisis Sintáctico
 
-Implementación completa de un Parser LR(1) con visualización gráfica del autómata.
+Implementación completa de un Parser LR(1) con visualización gráfica del autómata y API REST para integración con frontends.
+
+## 🌐 Deployment en Producción
+
+**⚠️ IMPORTANTE:** Si despliegas en Railway, Heroku, o servicios similares y los gráficos retornan `null`, necesitas instalar Graphviz como dependencia del sistema.
+
+**📖 Ver:** [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) para instrucciones detalladas.
+
+**Resumen rápido:**
+- Archivo `nixpacks.toml` ya configurado para Railway
+- Archivo `Dockerfile` disponible para deployment con Docker
+- Verifica instalación con: `GET /health` (debe retornar `graphviz_available: true`)
 
 ## 📁 Archivos Esenciales del Programa
 
