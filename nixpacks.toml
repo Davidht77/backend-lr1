@@ -3,3 +3,6 @@
 
 [phases.setup]
 aptPkgs = ["graphviz"]
+
+[start]
+cmd = "python main.py"
