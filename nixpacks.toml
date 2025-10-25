@@ -1,11 +1,5 @@
 # Nixpacks configuration for Railway
-# Instala Graphviz como dependencia del sistema
+# Agrega Graphviz a los paquetes detectados automáticamente por Nixpacks
 
 [phases.setup]
-nixPkgs = ["graphviz"]
-
-[phases.install]
-cmds = ["pip install -r requirements_api.txt"]
-
-[start]
-cmd = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+aptPkgs = ["graphviz"]
